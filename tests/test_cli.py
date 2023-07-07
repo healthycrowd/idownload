@@ -1,16 +1,28 @@
+from unittest.mock import patch
+from click.testing import CliRunner
 import pytest
 
+from idownload.cli import cli
 
-@pytest.mark.skip()
+
 def test_cli_success():
-    pass
+    runner = CliRunner()
+    result = runner.invoke(cli, [])
+    assert result.exit_code == 0
 
 
-@pytest.mark.skip()
 def test_command_success():
-    pass
+    runner = CliRunner()
+    with patch("idownload.sources.pinterest.PinterestSource.download") as mock_download:
+        result = runner.invoke(cli, ["pinterest", "testuser", "testboard", "testdir"])
+        mock_download.assert_called_once()
+    assert result.exit_code == 0
 
 
-@pytest.mark.skip()
 def test_command_fail():
-    pass
+    runner = CliRunner()
+    with patch("idownload.sources.pinterest.PinterestSource.download") as mock_download:
+        mock_download.side_effect = Exception()
+        result = runner.invoke(cli, ["pinterest", "testuser", "testboard", "testdir"])
+        mock_download.assert_called_once()
+    assert result.exit_code == 1
