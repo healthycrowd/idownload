@@ -1,9 +1,80 @@
+from tempfile import TemporaryDirectory
+from pathlib import Path
 import pytest
+from networktest.mock import HttpApiMock, HttpApiMockEndpoint
+from imeta import ImageMetadata
+
+from idownload.sources.pinterest import PinterestSource
 
 
-@pytest.mark.skip()
+RSS_JPEG = """
+<?xml version="1.0" encoding="utf-8"?><rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <item>
+            <title>Image title by Firstname Lastname</title>
+            <link>https://testurl</link>
+            <description>&lt;img src=&quot;https://i.pinimg.com/236x/testname.jpg&quot;&gt;</description>
+            <pubDate>Fri, 07 Jul 2023 20:41:10 GMT</pubDate>
+            <guid>https://www.pinterest.com/pin/1/</guid>
+        </item>
+    </channel>
+</rss>
+"""
+
+
+class PinterestMock(HttpApiMock):
+    hostnames = ["www.pinterest.com"]
+
+    endpoints = [
+        HttpApiMockEndpoint(
+            operation_id="rss",
+            match_pattern=b"^GET /testuser/testboard.rss",
+            response=lambda groups: (200, RSS_JPEG),
+        )
+    ]
+
+
+class PinimgMock(HttpApiMock):
+    hostnames = ["i.pinimg.com"]
+
+    endpoints = [
+        HttpApiMockEndpoint(
+            operation_id="original",
+            match_pattern=b"^GET /originals/testname.(jpg|png)",
+            response=lambda groups: (200, "testimage"),
+        )
+    ]
+
+
+def assert_testfile(dirname, suffix):
+    filepath = Path(dirname) / f"testname{suffix}"
+    expected = '"testimage"'
+    actual = filepath.read_text()
+    assert actual == expected
+
+    expected = {
+        "$version": "1.0",
+        "source_url": "https://testurl",
+        "source_id": "1",
+        "source_name": "Image title by Firstname Lastname",
+        "tags": ["source:pinterest"],
+    }
+    actual = dict(ImageMetadata.from_image(str(filepath)))
+    assert int(actual["access_date"]) == actual["access_date"]
+    del actual["access_date"]
+    assert actual == expected
+
+
 def test_download_success_normal():
-    pass
+    tempdir = TemporaryDirectory()
+
+    with PinterestMock() as mock_pinterest:
+        with PinimgMock() as mock_pinimg:
+            PinterestSource.download("testuser", "testboard", tempdir.name)
+            mock_pinterest.rss.request_mock.assert_called_once()
+            mock_pinimg.original.request_mock.assert_called_once()
+
+    assert_testfile(tempdir.name, ".jpg")
 
 
 @pytest.mark.skip()

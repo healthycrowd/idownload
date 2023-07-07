@@ -23,7 +23,7 @@ class PinterestSource:
 
             @contextmanager
             def noop_progressbar(*args, **kwargs):
-                yield files
+                yield args[0]
 
             progressbar = noop_progressbar
 
@@ -31,7 +31,8 @@ class PinterestSource:
             for item in bar:
                 source_name = item["title"]
                 source_id = re.match(
-                    "^https:\/\/www\.pinterest\.com\/pin\/(\d+)\/$", item["guid"]
+                    "^https:\\/\\/www\\.pinterest\\.com\\/pin\\/(\\d+)\\/$",
+                    item["guid"],
                 ).groups()[0]
                 metadata = {
                     "$version": "1.0",
@@ -43,7 +44,7 @@ class PinterestSource:
                 }
 
                 url_start = re.search(
-                    '<img src="(.+?)\.jpg" \/>', item["description"]
+                    '<img src="(.+?)\\.jpg" \\/>', item["description"]
                 ).groups()[0]
                 url_start = url_start.replace("236x", "originals")
 
