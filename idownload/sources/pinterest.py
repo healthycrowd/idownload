@@ -6,6 +6,7 @@ from pathlib import Path
 from contextlib import contextmanager
 import feedparser
 from imeta import ImageMetadata
+from fnum import FnumMetadata
 
 from ..exceptions import ImageDownloadException
 
@@ -49,8 +50,19 @@ class PinterestSource:
                 suffixes = (".jpg", ".png")
                 dirpath = Path(dirpath)
                 possible_urls = list(f"{url_start}{suffix}" for suffix in suffixes)
+
                 if any((dirpath / Path(url).name).exists() for url in possible_urls):
                     continue
+                try:
+                    fnum_metadata = FnumMetadata.from_file(dirpath)
+                    if any(
+                        fnum_metadata.contains(str(Path(url).name))
+                        for url in possible_urls
+                    ):
+                        continue
+                except FileNotFoundError:
+                    pass
+
                 while possible_urls:
                     image_url = possible_urls.pop(0)
                     try:
