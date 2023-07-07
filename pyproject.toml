@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "idownload"
+description = "Downloads images and stores metadata about them in a JSON file"
+license = { text = "MIT" }
+authors = [{name = "Matt Wisniewski", email = "healthycrowd@mattw.life"}]
+keywords = ["idownload", "cli", "utility", "image", "download", "backup", "archive", "pinterest"]
+dynamic = ["version"]
+requires-python = ">=3.8.0"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "click",
+    "feedparser~=6.0",
+    "imeta~=1.0",
+]
+
+[project.urls]
+homepage = "https://github.com/healthycrowd/idownload"
+
+[project.scripts]
+idownload = "idownload.cli:cli"
