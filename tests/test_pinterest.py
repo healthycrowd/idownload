@@ -3,8 +3,10 @@ from pathlib import Path
 import pytest
 from networktest.mock import HttpApiMock, HttpApiMockEndpoint
 from imeta import ImageMetadata
+from fnum import number_files
 
 from idownload.sources.pinterest import PinterestSource
+from idownload.exceptions import ImageDownloadException
 
 
 RSS_JPG = """
@@ -52,8 +54,8 @@ class PinimgMock(HttpApiMock):
     ]
 
 
-def assert_testfile(dirname, suffix):
-    filepath = Path(dirname) / f"testname{suffix}"
+def assert_testfile(dirname, suffix, name="testname"):
+    filepath = Path(dirname) / f"{name}{suffix}"
     expected = '"testimage"'
     actual = filepath.read_text()
     assert actual == expected
@@ -90,16 +92,55 @@ def test_download_success_once(suffix):
     assert_testfile(tempdir.name, f".{suffix}")
 
 
-@pytest.mark.skip()
 def test_download_success_ignore_filename_duplicates():
-    pass
+    tempdir = TemporaryDirectory()
+
+    with PinterestMock() as mock_pinterest:
+        with PinimgMock() as mock_pinimg:
+            PinterestSource.download("testuser", "testboard", tempdir.name)
+            mock_pinterest.rss.request_mock.assert_called_once()
+            mock_pinimg.original_jpg.request_mock.assert_called_once()
+    assert_testfile(tempdir.name, ".jpg")
+
+    with PinterestMock() as mock_pinterest:
+        with PinimgMock() as mock_pinimg:
+            PinterestSource.download("testuser", "testboard", tempdir.name)
+            mock_pinterest.rss.request_mock.assert_called_once()
+            mock_pinimg.original_jpg.request_mock.assert_not_called()
+    assert_testfile(tempdir.name, ".jpg")
 
 
-@pytest.mark.skip()
 def test_download_success_ignore_fnum_duplicates():
-    pass
+    tempdir = TemporaryDirectory()
+
+    with PinterestMock() as mock_pinterest:
+        with PinimgMock() as mock_pinimg:
+            PinterestSource.download("testuser", "testboard", tempdir.name)
+            mock_pinterest.rss.request_mock.assert_called_once()
+            mock_pinimg.original_jpg.request_mock.assert_called_once()
+    assert_testfile(tempdir.name, ".jpg")
+
+    metadata = number_files(tempdir.name, SUFFIXES, include_imeta=True)
+    metadata.to_file(tempdir.name)
+    assert_testfile(tempdir.name, ".jpg", name="1")
+
+    with PinterestMock() as mock_pinterest:
+        with PinimgMock() as mock_pinimg:
+            PinterestSource.download("testuser", "testboard", tempdir.name)
+            mock_pinterest.rss.request_mock.assert_called_once()
+            mock_pinimg.original_jpg.request_mock.assert_not_called()
+    assert_testfile(tempdir.name, ".jpg", name="1")
 
 
-@pytest.mark.skip()
 def test_download_fail_imagedownload():
-    pass
+    tempdir = TemporaryDirectory()
+
+    with PinterestMock() as mock_pinterest:
+        with PinimgMock() as mock_pinimg:
+            for suffix in SUFFIXES:
+                getattr(mock_pinimg, f"original_{suffix}").response = lambda groups: (
+                    403,
+                    None,
+                )
+            with pytest.raises(ImageDownloadException):
+                PinterestSource.download("testuser", "testboard", tempdir.name)
