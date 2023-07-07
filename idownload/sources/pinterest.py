@@ -41,24 +41,26 @@ class PinterestSource:
                     "tags": ["source:pinterest"],
                 }
 
-                image_url = re.search(
+                url_start = re.search(
                     '<img src="(.+?)\.jpg" \/>', item["description"]
                 ).groups()[0]
-                image_url = image_url.replace("236x", "originals")
+                url_start = url_start.replace("236x", "originals")
 
-                suffixes = [".jpg", ".png"]
-                while suffixes:
-                    suffix = suffixes.pop(0)
+                suffixes = (".jpg", ".png")
+                dirpath = Path(dirpath)
+                possible_urls = list(f"{url_start}{suffix}" for suffix in suffixes)
+                if any((dirpath / Path(url).name).exists() for url in possible_urls):
+                    continue
+                while possible_urls:
+                    image_url = possible_urls.pop(0)
                     try:
-                        request = urllib.request.Request(f"{image_url}{suffix}")
+                        request = urllib.request.Request(image_url)
                         data = urllib.request.urlopen(request).read()
-                        image_url += suffix
                         break
                     except urllib.error.HTTPError as e:
-                        if e.getcode() != 403 or not suffixes:
+                        if e.getcode() != 403 or not possible_urls:
                             raise ImageDownloadException(image_url, e)
 
-                dirpath = Path(dirpath)
-                filepath = Path(image_url)
-                (dirpath / filepath.name).write_bytes(data)
-                ImageMetadata(metadata).to_image(str(dirpath / filepath.name))
+                filepath = dirpath / Path(image_url).name
+                filepath.write_bytes(data)
+                ImageMetadata(metadata).to_image(str(filepath))
