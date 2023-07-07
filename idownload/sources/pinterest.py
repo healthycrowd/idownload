@@ -61,5 +61,4 @@ class PinterestSource:
                 dirpath = Path(dirpath)
                 filepath = Path(image_url)
                 (dirpath / filepath.name).write_bytes(data)
-                # use to_image instead
-                ImageMetadata(metadata).to_file(str(dirpath / f"{filepath.stem}.json"))
+                ImageMetadata(metadata).to_image(str(dirpath / filepath.name))

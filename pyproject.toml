@@ -28,7 +28,7 @@ classifiers = [
 dependencies = [
     "click",
     "feedparser~=6.0",
-    "imeta~=1.0",
+    "imeta~=1.1",
 ]
 
 [project.urls]
