@@ -7,7 +7,7 @@ from imeta import ImageMetadata
 from idownload.sources.pinterest import PinterestSource
 
 
-RSS_JPEG = """
+RSS_JPG = """
 <?xml version="1.0" encoding="utf-8"?><rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
     <channel>
         <item>
@@ -20,6 +20,7 @@ RSS_JPEG = """
     </channel>
 </rss>
 """
+SUFFIXES = ["jpg", "png"]
 
 
 class PinterestMock(HttpApiMock):
@@ -29,7 +30,7 @@ class PinterestMock(HttpApiMock):
         HttpApiMockEndpoint(
             operation_id="rss",
             match_pattern=b"^GET /testuser/testboard.rss",
-            response=lambda groups: (200, RSS_JPEG),
+            response=lambda groups: (200, RSS_JPG),
         )
     ]
 
@@ -39,10 +40,15 @@ class PinimgMock(HttpApiMock):
 
     endpoints = [
         HttpApiMockEndpoint(
-            operation_id="original",
-            match_pattern=b"^GET /originals/testname.(jpg|png)",
+            operation_id="original_jpg",
+            match_pattern=b"^GET /originals/testname.jpg",
             response=lambda groups: (200, "testimage"),
-        )
+        ),
+        HttpApiMockEndpoint(
+            operation_id="original_png",
+            match_pattern=b"^GET /originals/testname.png",
+            response=lambda groups: (200, "testimage"),
+        ),
     ]
 
 
@@ -65,21 +71,23 @@ def assert_testfile(dirname, suffix):
     assert actual == expected
 
 
-def test_download_success_normal():
+@pytest.mark.parametrize("suffix", SUFFIXES)
+def test_download_success_once(suffix):
     tempdir = TemporaryDirectory()
 
     with PinterestMock() as mock_pinterest:
         with PinimgMock() as mock_pinimg:
+            for other_suffix in SUFFIXES:
+                getattr(mock_pinimg, f"original_{other_suffix}").response = (
+                    (lambda groups: (200, "testimage"))
+                    if other_suffix == suffix
+                    else (lambda groups: (403, None))
+                )
             PinterestSource.download("testuser", "testboard", tempdir.name)
             mock_pinterest.rss.request_mock.assert_called_once()
-            mock_pinimg.original.request_mock.assert_called_once()
+            getattr(mock_pinimg, f"original_{suffix}").request_mock.assert_called_once()
 
-    assert_testfile(tempdir.name, ".jpg")
-
-
-@pytest.mark.skip()
-def test_download_success_alternate_suffix():
-    pass
+    assert_testfile(tempdir.name, f".{suffix}")
 
 
 @pytest.mark.skip()
