@@ -21,6 +21,11 @@ try:
         import nameattr
 except ImportError:
     pass
+except:
+    nameattr_out = stdout.getvalue()
+    nameattr_err = stderr.getvalue()
+    print(nameattr_err, end="")
+    print(nameattr_err, file=sys.stderr, end="")
 nameattr_out = stdout.getvalue()
 nameattr_err = stderr.getvalue()
 
