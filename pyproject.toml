@@ -35,5 +35,15 @@ dependencies = [
 [project.urls]
 homepage = "https://github.com/healthycrowd/idownload"
 
+[project.optional-dependencies]
+tests = [
+    "pytest",
+    "networktest",
+    "nameattr~=1.0",
+]
+nameattr = [
+    "nameattr~=1.0",
+]
+
 [project.scripts]
 idownload = "idownload.cli:cli"

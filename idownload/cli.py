@@ -26,3 +26,11 @@ for source in SOURCES:
     for arg in reversed(source.ARGS):
         command = click.argument(arg, nargs=1)(command)
     command = cli.command()(command)
+
+    command = click.option(
+        "--with-attr/--no-with-attr",
+        default=False,
+        help="""
+Attempt to attribute to the image to a person or organization and use that name for source_name.
+        """,
+    )(command)

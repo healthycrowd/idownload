@@ -8,6 +8,11 @@ import feedparser
 from imeta import ImageMetadata
 from fnum import FnumMetadata
 
+try:
+    import nameattr
+except ImportError:
+    pass
+
 from ..exceptions import ImageDownloadException
 
 
@@ -16,7 +21,7 @@ class PinterestSource:
     ARGS = ("username", "board", "dirpath")
 
     @classmethod
-    def download(cls, username, board, dirpath, progressbar=None):
+    def download(cls, username, board, dirpath, progressbar=None, with_attr=False):
         url = f"https://www.pinterest.com/{username}/{board}.rss"
         feed = feedparser.parse(url)
         if not progressbar:
@@ -30,10 +35,14 @@ class PinterestSource:
         with progressbar(feed["items"], label="Downloading images") as bar:
             for item in bar:
                 source_name = item["title"]
+                if with_attr:
+                    source_name = nameattr.from_text(source_name)
+
                 source_id = re.match(
                     "^https:\\/\\/www\\.pinterest\\.com\\/pin\\/(\\d+)\\/$",
                     item["guid"],
                 ).groups()[0]
+
                 metadata = {
                     "$version": "1.0",
                     "source_url": item["link"],

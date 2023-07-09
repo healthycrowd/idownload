@@ -54,23 +54,24 @@ class PinimgMock(HttpApiMock):
     ]
 
 
-def assert_testfile(dirname, suffix, name="testname"):
+def assert_testfile(dirname, suffix, name="testname", expected_meta=None):
     filepath = Path(dirname) / f"{name}{suffix}"
     expected = '"testimage"'
     actual = filepath.read_text()
     assert actual == expected
 
-    expected = {
-        "$version": "1.0",
-        "source_url": "https://testurl",
-        "source_id": "1",
-        "source_name": "Image title by Firstname Lastname",
-        "tags": ["source:pinterest"],
-    }
+    if not expected_meta:
+        expected_meta = {
+            "$version": "1.0",
+            "source_url": "https://testurl",
+            "source_id": "1",
+            "source_name": "Image title by Firstname Lastname",
+            "tags": ["source:pinterest"],
+        }
     actual = dict(ImageMetadata.from_image(str(filepath)))
     assert int(actual["access_date"]) == actual["access_date"]
     del actual["access_date"]
-    assert actual == expected
+    assert actual == expected_meta
 
 
 @pytest.mark.parametrize("suffix", SUFFIXES)
@@ -146,3 +147,27 @@ def test_download_fail_imagedownload():
                 )
             with pytest.raises(ImageDownloadException):
                 PinterestSource.download("testuser", "testboard", tempdir.name)
+
+
+def test_download_success_with_attr():
+    tempdir = TemporaryDirectory()
+
+    with PinterestMock() as mock_pinterest:
+        with PinimgMock() as mock_pinimg:
+            PinterestSource.download(
+                "testuser", "testboard", tempdir.name, with_attr=True
+            )
+            mock_pinterest.rss.request_mock.assert_called_once()
+            mock_pinimg.original_jpg.request_mock.assert_called_once()
+
+    assert_testfile(
+        tempdir.name,
+        ".jpg",
+        expected_meta={
+            "$version": "1.0",
+            "source_url": "https://testurl",
+            "source_id": "1",
+            "source_name": "Firstname Lastname",
+            "tags": ["source:pinterest"],
+        },
+    )

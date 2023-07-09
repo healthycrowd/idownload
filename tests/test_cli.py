@@ -14,7 +14,9 @@ def test_cli_success():
 def test_command_success():
     runner = CliRunner()
     with patch("idownload.sources.pinterest.PinterestSource.download") as mock_download:
-        result = runner.invoke(cli, ["pinterest", "testuser", "testboard", "testdir"])
+        result = runner.invoke(
+            cli, ["pinterest", "testuser", "testboard", "testdir", "--with-attr"]
+        )
         mock_download.assert_called_once()
     assert result.exit_code == 0
 
