@@ -2,7 +2,7 @@ import click
 
 from . import __version__
 from .sources import SOURCES
-from .exceptions import ImageDownloadException
+from .exceptions import SourceAccessException
 
 
 @click.group(
@@ -20,7 +20,10 @@ for source in SOURCES:
 
     def command(**kwargs):
         kwargs["progressbar"] = click.progressbar
-        source.download(**kwargs)
+        try:
+            source.download(**kwargs)
+        except SourceAccessException as e:
+            click.echo(str(e), err=True)
 
     command.__name__ = source.COMMAND
     for arg in reversed(source.ARGS):
@@ -34,3 +37,6 @@ for source in SOURCES:
 Attempt to attribute to the image to a person or organization and use that name for source_name.
         """,
     )(command)
+
+
+__all__ = ("cli",)

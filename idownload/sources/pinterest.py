@@ -11,7 +11,7 @@ import feedparser
 from imeta import ImageMetadata
 from fnum import FnumMetadata
 
-from ..exceptions import ImageDownloadException
+from ..exceptions import SourceAccessException, ImageDownloadException
 
 
 stdout = io.StringIO()
@@ -33,6 +33,11 @@ class PinterestSource:
     def download(cls, username, board, dirpath, progressbar=None, with_attr=False):
         url = f"https://www.pinterest.com/{username}/{board}.rss"
         feed = feedparser.parse(url)
+        if feed.status < 200 or feed.status > 299:
+            raise SourceAccessException(
+                f"HTTP status {feed.status} while requesting feed {url}"
+            )
+
         if not progressbar:
 
             @contextmanager
