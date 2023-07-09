@@ -68,7 +68,7 @@ class PinterestSource:
                 ).groups()[0]
 
                 metadata = {
-                    "$version": "1.0",
+                    "$version": "1.1",
                     "source_url": item["link"],
                     "source_id": source_id,
                     "source_name": source_name,
@@ -109,4 +109,5 @@ class PinterestSource:
 
                 filepath = dirpath / Path(image_url).name
                 filepath.write_bytes(data)
+                metadata["extension"] = filepath.suffix[1:]
                 ImageMetadata(metadata).to_image(str(filepath))

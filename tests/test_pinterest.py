@@ -62,7 +62,8 @@ def assert_testfile(dirname, suffix, name="testname", expected_meta=None):
 
     if not expected_meta:
         expected_meta = {
-            "$version": "1.0",
+            "$version": "1.1",
+            "extension": suffix[1:],
             "source_url": "https://testurl",
             "source_id": "1",
             "source_name": "Image title by Firstname Lastname",
@@ -164,7 +165,8 @@ def test_download_success_with_attr():
         tempdir.name,
         ".jpg",
         expected_meta={
-            "$version": "1.0",
+            "$version": "1.1",
+            "extension": "jpg",
             "source_url": "https://testurl",
             "source_id": "1",
             "source_name": "Firstname Lastname",
