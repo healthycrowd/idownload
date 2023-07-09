@@ -1,19 +1,28 @@
 import re
 import urllib.request
 import urllib.error
+import io
+import sys
 from datetime import datetime
 from pathlib import Path
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout, redirect_stderr
+from os import devnull
 import feedparser
 from imeta import ImageMetadata
 from fnum import FnumMetadata
 
+from ..exceptions import ImageDownloadException
+
+
+stdout = io.StringIO()
+stderr = io.StringIO()
 try:
-    import nameattr
+    with redirect_stdout(stdout), redirect_stderr(stderr):
+        import nameattr
 except ImportError:
     pass
-
-from ..exceptions import ImageDownloadException
+nameattr_out = stdout.getvalue()
+nameattr_err = stderr.getvalue()
 
 
 class PinterestSource:
@@ -36,7 +45,12 @@ class PinterestSource:
             for item in bar:
                 source_name = item["title"]
                 if with_attr:
-                    source_name = nameattr.from_text(source_name)
+                    try:
+                        source_name = nameattr.from_text(source_name)
+                    except:
+                        print(nameattr_err, end="")
+                        print(nameattr_err, file=sys.stderr, end="")
+                        raise
 
                 source_id = re.match(
                     "^https:\\/\\/www\\.pinterest\\.com\\/pin\\/(\\d+)\\/$",
