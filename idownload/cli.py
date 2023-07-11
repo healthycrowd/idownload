@@ -19,7 +19,7 @@ def cli(**kwargs):
 for source in SOURCES:
 
     def command(**kwargs):
-        kwargs["progressbar"] = click.progressbar
+        kwargs["_progressbar"] = click.progressbar
         try:
             source.download(**kwargs)
         except SourceAccessException as e:

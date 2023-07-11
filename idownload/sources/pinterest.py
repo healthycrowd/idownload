@@ -35,7 +35,7 @@ class PinterestSource:
     ARGS = ("username", "board", "dirpath")
 
     @classmethod
-    def download(cls, username, board, dirpath, progressbar=None, with_attr=False):
+    def download(cls, username, board, dirpath, with_attr=False, _progressbar=None):
         url = f"https://www.pinterest.com/{username}/{board}.rss"
         feed = feedparser.parse(url)
         if feed.status < 200 or feed.status > 299:
@@ -43,15 +43,20 @@ class PinterestSource:
                 f"HTTP status {feed.status} while requesting feed {url}"
             )
 
-        if not progressbar:
+        if not _progressbar:
 
             @contextmanager
             def noop_progressbar(*args, **kwargs):
                 yield args[0]
 
-            progressbar = noop_progressbar
+            _progressbar = noop_progressbar
 
-        with progressbar(feed["items"], label="Downloading images") as bar:
+        try:
+            fnum_metadata = FnumMetadata.from_file(dirpath)
+        except FileNotFoundError:
+            fnum_metadata = None
+
+        with _progressbar(feed["items"], label="Downloading images") as bar:
             for item in bar:
                 source_name = item["title"]
                 if with_attr:
@@ -87,15 +92,10 @@ class PinterestSource:
 
                 if any((dirpath / Path(url).name).exists() for url in possible_urls):
                     continue
-                try:
-                    fnum_metadata = FnumMetadata.from_file(dirpath)
-                    if any(
-                        fnum_metadata.contains(str(Path(url).name))
-                        for url in possible_urls
-                    ):
-                        continue
-                except FileNotFoundError:
-                    pass
+                if fnum_metadata and any(
+                    fnum_metadata.contains(str(Path(url).name)) for url in possible_urls
+                ):
+                    continue
 
                 while possible_urls:
                     image_url = possible_urls.pop(0)

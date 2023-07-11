@@ -29,7 +29,7 @@ dependencies = [
     "click",
     "feedparser~=6.0",
     "imeta~=1.1",
-    "fnum~=1.2",
+    "fnum~=1.5",
 ]
 
 [project.urls]

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from networktest.mock import HttpApiMock, HttpApiMockEndpoint
 from imeta import ImageMetadata
-from fnum import number_files
+from fnum import number_files, FnumMetadata
 
 from idownload.sources.pinterest import PinterestSource
 from idownload.exceptions import ImageDownloadException
@@ -122,9 +122,13 @@ def test_download_success_ignore_fnum_duplicates():
             mock_pinimg.original_jpg.request_mock.assert_called_once()
     assert_testfile(tempdir.name, ".jpg")
 
-    metadata = number_files(
-        tempdir.name, [f".{suffix}" for suffix in SUFFIXES], include_imeta=True
+    number_files(
+        tempdir.name,
+        [f".{suffix}" for suffix in SUFFIXES],
+        write_metadata=True,
+        include_imeta=True,
     )
+    metadata = FnumMetadata.from_file(tempdir.name)
     metadata.to_file(tempdir.name)
     assert_testfile(tempdir.name, ".jpg", name="1")
 
