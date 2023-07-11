@@ -128,8 +128,6 @@ def test_download_success_ignore_fnum_duplicates():
         write_metadata=True,
         include_imeta=True,
     )
-    metadata = FnumMetadata.from_file(tempdir.name)
-    metadata.to_file(tempdir.name)
     assert_testfile(tempdir.name, ".jpg", name="1")
 
     with PinterestMock() as mock_pinterest:
@@ -138,6 +136,28 @@ def test_download_success_ignore_fnum_duplicates():
             mock_pinterest.rss.request_mock.assert_called_once()
             mock_pinimg.original_jpg.request_mock.assert_not_called()
     assert_testfile(tempdir.name, ".jpg", name="1")
+
+
+def test_download_success_add_fnum_order():
+    tempdir = TemporaryDirectory()
+
+    number_files(
+        tempdir.name,
+        [f".{suffix}" for suffix in SUFFIXES],
+        write_metadata=True,
+        include_imeta=True,
+    )
+
+    with PinterestMock() as mock_pinterest:
+        with PinimgMock() as mock_pinimg:
+            PinterestSource.download("testuser", "testboard", tempdir.name)
+            mock_pinterest.rss.request_mock.assert_called_once()
+            mock_pinimg.original_jpg.request_mock.assert_called_once()
+    assert_testfile(tempdir.name, ".jpg")
+
+    metadata = FnumMetadata.from_file(tempdir.name)
+    assert metadata.order == ["testname.jpg"]
+    assert metadata.originals == {"testname.jpg": "testname.jpg"}
 
 
 def test_download_fail_imagedownload():

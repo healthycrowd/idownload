@@ -111,3 +111,9 @@ class PinterestSource:
                 filepath.write_bytes(data)
                 metadata["extension"] = filepath.suffix[1:]
                 ImageMetadata(metadata).to_image(str(filepath))
+                if fnum_metadata:
+                    fnum_metadata.order.append(filepath.name)
+                    fnum_metadata.originals[filepath.name] = filepath.name
+
+        if fnum_metadata:
+            fnum_metadata.to_file(dirpath)
